@@ -6,7 +6,15 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "customers")
+@Table(
+        name = "customers",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_customer_first_last_birthdate",
+                        columnNames = {"first_name", "last_name", "birth_date"}
+                )
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,6 +26,17 @@ public class Customer {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "customer_id")
     private Integer customerId;
+
+    // Public User Id already auto-generated in database
+    @Column(
+            name = "public_user_id",
+            length = 18,
+            unique = true,
+            insertable = false,
+            updatable = false
+    )
+    @Generated
+    private String publicUserId;
 
     @Column(name = "first_name", nullable = false, length = 100)
     private String firstName;
