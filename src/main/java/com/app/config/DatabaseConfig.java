@@ -1,6 +1,7 @@
 package com.app.config;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -17,27 +18,28 @@ import java.util.Properties;
 @Configuration
 @EnableTransactionManagement
 @EnableJpaRepositories(
-        basePackages = "com.app.video_rental_system.repository",
+        basePackages = "com.app.repository",
         entityManagerFactoryRef = "entityManagerFactory",
         transactionManagerRef = "transactionManager"
 )
+@EntityScan(basePackages = "com.app.model")
 public class DatabaseConfig {
-    @Value("${DB_URL}")
+    @Value("${spring.datasource.url}")
     private String dbUrl;
 
-    @Value("${DB_USERNAME}")
+    @Value("${spring.datasource.username}")
     private String dbUsername;
 
-    @Value("${DB_PASSWORD}")
+    @Value("${spring.datasource.password}")
     private String dbPassword;
 
-    @Value("${DB_DRIVER_CLASS}")
+    @Value("${spring.datasource.driver-class-name}")
     private String dbDriver;
 
-    @Value("${DB_HIBERNATE}")
+    @Value("${spring.datasource.hibernate.dialect}")
     private String hibernateDialect;
 
-    @Value("${spring.jpa.hibernate.ddl-auto:update}")
+    @Value("${spring.jpa.hibernate.ddl-auto}")
     private String ddlAuto;
 
     @Bean
@@ -54,7 +56,7 @@ public class DatabaseConfig {
     public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource());
-        em.setPackagesToScan("com.example.model"); // Package containing your @Entity classes
+        em.setPackagesToScan("com.app.model");
 
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
         em.setJpaVendorAdapter(vendorAdapter);
