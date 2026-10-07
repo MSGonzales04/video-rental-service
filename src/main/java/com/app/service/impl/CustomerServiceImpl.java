@@ -1,7 +1,9 @@
 package com.app.service.impl;
 
 import com.app.dto.request.CustomerRequest;
+import com.app.dto.response.ApiResponse;
 import com.app.dto.response.CustomerResponse;
+import com.app.exception.ResponseException;
 import com.app.model.Customer;
 import com.app.repository.CustomerRepository;
 import com.app.service.CustomerService;
@@ -11,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
@@ -24,45 +25,114 @@ public class CustomerServiceImpl implements CustomerService {
 
     @Override
     @Transactional
-    public CustomerResponse createCustomer(CustomerRequest customerRequest) {
-        boolean exists = customerRepository.existsByFirstNameAndLastNameAndBirthDate(customerRequest.getFirstName(), customerRequest.getLastName(), customerRequest.getBirthDate());
-
-        if(exists){
-            log.warn("Customer creation rejected: Duplicate record found for {} {} ({})",
+    public ApiResponse createCustomer(CustomerRequest customerRequest) {
+            boolean exists = customerRepository.existsByFirstNameAndLastNameAndBirthDate(
                     customerRequest.getFirstName(),
                     customerRequest.getLastName(),
                     customerRequest.getBirthDate());
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "User already exists"
-            );
-        }
 
-        Customer customer = Customer.builder()
-                .firstName(customerRequest.getFirstName())
-                .lastName(customerRequest.getLastName())
-                .middleInitial(customerRequest.getMiddleInitial())
-                .birthDate(customerRequest.getBirthDate())
-                .build();
+            // Validate if customer is already registered.
+            if (exists) {
+                throw new ResponseException(
+                        HttpStatus.CONFLICT,
+                        "Customer already existing"
+                );
+            }
 
-        Customer savedCustomer = customerRepository.save(customer);
-        entityHelper.refresh(savedCustomer);
+            try {
+                ApiResponse apiResponse = new ApiResponse();
+                Customer customer = Customer.builder()
+                        .firstName(customerRequest.getFirstName())
+                        .lastName(customerRequest.getLastName())
+                        .middleInitial(customerRequest.getMiddleInitial())
+                        .birthDate(customerRequest.getBirthDate())
+                        .build();
 
-        Optional.ofNullable(savedCustomer.getPublicUserId())
-                .ifPresent(puid -> log.info("Customer successfully added [PUID: {}]", puid));
+                Customer savedCustomer = customerRepository.save(customer);
+                entityHelper.refresh(savedCustomer);
 
-        return new CustomerResponse(savedCustomer);
+                Optional.ofNullable(savedCustomer.getPublicUserId())
+                        .ifPresent(puid -> log.info("Customer successfully added [PUID: {}]", puid));
+
+                return ApiResponse.builder()
+                        .message("Customer successfully created")
+                        .customerResponse(new CustomerResponse(savedCustomer))
+                        .build();
+
+            } catch (Exception e) {
+                log.error("Failed to register customer", e);
+                throw new ResponseException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "An unexpected error occurred while creating the customer",
+                        e
+                );
+            }
     }
 
     @Override
     @Transactional(readOnly = true)
-    public CustomerResponse getCustomerByPublicUserId(String publicUserId) {
+    public ApiResponse getCustomerByPublicUserId(String publicUserId) {
         Customer customer = customerRepository.findByPublicUserId(publicUserId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST,
-                        "User not found"
+                .orElseThrow(() -> new ResponseException(
+                        HttpStatus.NOT_FOUND,
+                        "Customer does not exist"
                 ));
-
-        return new CustomerResponse(customer);
+        return ApiResponse.builder()
+                .message("Customer successfully retrieved")
+                .customerResponse(new CustomerResponse(customer))
+                .build();
     }
+
+//    @Override
+//    @Transactional
+//    public ApiResponse updateCustomer(String publicUserId, CustomerRequest customerRequest) {
+//        Customer customer = customerRepository.findByPublicUserId(publicUserId)
+//                .orElseThrow(() -> new ResponseException(
+//                        HttpStatus.BAD_REQUEST,
+//                        "Customer does not exist"
+//                ));
+//
+//        boolean duplicateExists = customerRepository.existsByFirstNameAndLastNameAndBirthDate(
+//                customerRequest.getFirstName(),
+//                customerRequest.getLastName(),
+//                customerRequest.getBirthDate()
+//        );
+//
+//        boolean isSameCustomer = customer.getFirstName().equalsIgnoreCase(customerRequest.getFirstName())
+//                && customer.getLastName().equalsIgnoreCase(customerRequest.getLastName())
+//                && customer.getBirthDate().equals(customerRequest.getBirthDate());
+//
+//        if (duplicateExists && !isSameCustomer) {
+//            throw new ResponseException(
+//                    HttpStatus.CONFLICT,
+//                    "Another customer already exists with the given details"
+//            );
+//        }
+//
+//        try {
+//            customer.setFirstName(customerRequest.getFirstName());
+//            customer.setLastName(customerRequest.getLastName());
+//            customer.setMiddleInitial(customerRequest.getMiddleInitial());
+//            customer.setBirthDate(customerRequest.getBirthDate());
+//
+//            Customer updatedCustomer = customerRepository.save(customer);
+//
+//            log.info("Customer successfully updated [PUID: {}]", publicUserId);
+//
+//            return ApiResponse.builder()
+//                    .message("Customer successfully updated")
+//                    .customerResponse(new CustomerResponse(updatedCustomer))
+//                    .build();
+//
+//        } catch (ResponseException e) {
+//            throw e;
+//        } catch (Exception e) {
+//            log.error("Failed to update customer [PUID: {}]", publicUserId, e);
+//            throw new ResponseException(
+//                    HttpStatus.INTERNAL_SERVER_ERROR,
+//                    "An unexpected error occurred while updating the customer",
+//                    e
+//            );
+//        }
+//    }
 }

@@ -1,6 +1,7 @@
 package com.app.dto.response;
 
 import com.app.model.Customer;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class CustomerResponse {
 
+    @JsonIgnore
     private String publicUserId;
     private String firstName;
     private String lastName;
