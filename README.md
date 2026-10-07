@@ -1,27 +1,50 @@
-# video-rental-service
+# 🎬 video-rental-service
 
-# Overview
+[![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://www.oracle.com/java/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Database](https://img.shields.io/badge/Database-MS%20SQL%20Server-blue.svg)](https://www.microsoft.com/sql-server)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-video-rental-service serves as the core back-end API service for the Video Rental System. It manages essential business domain entities, customer registration workflows, user profile updates, and database persistence using Spring Boot, Spring Data JPA, and Microsoft SQL Server.
+> **Back-End API Service for Video Rental System**
+>
+> A robust RESTful microservice built with **Spring Boot** and **Spring Data JPA** handling core customer identity management, rental processing, duplicate validation, and centralized exception management.
 
-# Tech Stack & Prerequisites
+---
 
-Language: Java 17+
+## 📋 Table of Contents
 
-Framework: Spring Boot 3.x
+- [Architecture & Tech Stack](#-architecture--tech-stack)
+- [Centralized API Standard](#-centralized-api-standard)
+  - [Success Payload Schema](#success-payload-schema)
+  - [Error Payload Schema](#error-payload-schema)
+- [REST API Endpoints](#-rest-api-endpoints)
+  - [1. Create Customer](#1-create-customer)
+  - [2. Update Customer](#2-update-customer)
+- [Configuration & Setup](#-configuration--setup)
 
-Database: Microsoft SQL Server
+---
 
-OR Framework: Spring Data JPA / Hibernate
+## 🛠 Architecture & Tech Stack
 
-Build Tool: Maven / Gradle
+| Component | Technology | Description |
+| :--- | :--- | :--- |
+| **Language** | Java 17+ | Core programming language |
+| **Framework** | Spring Boot 3.x | Application framework & REST controllers |
+| **Persistence** | Spring Data JPA / Hibernate 6+ | Data access and object-relational mapping |
+| **Database** | MS SQL Server | Relational persistence store |
+| **DTO Utility** | Lombok / Jackson | Boilerplate reduction & custom JSON serialization |
 
-# Centralized API Response Structure
+---
 
-# Success Response (ApiResponse)
+## 🌐 Centralized API Standard
 
-All successful operational endpoints return data wrapped in the ApiResponse schema:
+All endpoints follow uniform response conventions for seamless frontend integration and predictable exception handling.
 
+### Success Payload Schema
+
+Successful operations return HTTP `200 OK` or `201 Created` wrapped inside a standardized `ApiResponse` envelope:
+
+```json
 {
   "message": "Customer successfully created",
   "customer": {
@@ -32,12 +55,13 @@ All successful operational endpoints return data wrapped in the ApiResponse sche
     "createdDate": "2026-10-07T21:19:37.083"
   }
 }
+```
 
+### Error Payload Schema
 
-# Error Response Schema
+Handled and unhandled exceptions are caught by a `@RestControllerAdvice` global handler:
 
-Unhandled exceptions and domain validation errors are transformed into standard error structures:
-
+```json
 {
   "response": {
     "error": "BAD_REQUEST",
@@ -46,32 +70,39 @@ Unhandled exceptions and domain validation errors are transformed into standard 
     "datetime": "2026-10-07T20:56:16.189209"
   }
 }
+```
 
+---
 
-# Customer API Endpoints
+## 🚀 REST API Endpoints
 
-# 1. Create Customer
+### 1. Create Customer
 
-Registers a new customer in the Video Rental System.
+Registers a new customer profile after validating unique identity constraints.
 
-Mapping: POST /customer/createCustomer
+- **URL:** `/customer/createCustomer`
+- **Method:** `POST`
 
-Headers: Content-Type: application/json
+#### Headers
 
-Description: Validates whether a customer with the same First Name, Last Name, and Birth Date already exists in the system before persisting.
+| Header | Value | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `Content-Type` | `application/json` | **Yes** | Payload format |
 
-Sample Request Payload:
-
+#### Request Body
+```json
 {
   "firstName": "Juan",
   "lastName": "Doe",
   "middleInitial": "A",
   "birthDate": "1995-08-20"
 }
+```
 
+<details>
+<summary><b>▶ Sample Success Response (200 OK)</b></summary>
 
-Sample Response (201 / 200 OK):
-
+```json
 {
   "message": "Customer successfully created",
   "customer": {
@@ -82,12 +113,13 @@ Sample Response (201 / 200 OK):
     "createdDate": "2026-10-07T21:19:37.083"
   }
 }
+```
+</details>
 
+<details>
+<summary><b>▶ Sample Error Response (409 Conflict)</b></summary>
 
-Error Responses:
-
-409 Conflict:
-
+```json
 {
   "response": {
     "error": "CONFLICT",
@@ -96,34 +128,39 @@ Error Responses:
     "datetime": "2026-10-07T21:00:12.123456"
   }
 }
+```
+</details>
 
+---
 
-# 2. Update Customer Details
+### 2. Update Customer
 
-Updates an existing customer's basic information using their unique public user ID.
+Modifies profile details of an existing customer using their unique public user ID.
 
-Mapping: POST /customer/updateCustomer
+- **URL:** `/customer/updateCustomer`
+- **Method:** `POST`
 
-Headers:
+#### Headers
 
-Content-Type: application/json
+| Header | Value | Required | Description |
+| :--- | :--- | :--- | :--- |
+| `Content-Type` | `application/json` | **Yes** | Payload format |
+| `public_user_id` | `String` | **Yes** | Unique public customer identifier |
 
-public_user_id: <STRING_PUID> (Required)
-
-Description: Fetches the customer record matching public_user_id. Verifies no duplicate records match the updated details before saving.
-
-Sample Request Payload:
-
+#### Request Body
+```json
 {
   "firstName": "Juan",
   "lastName": "Doe Updated",
   "middleInitial": "B",
   "birthDate": "1995-08-20"
 }
+```
 
+<details>
+<summary><b>▶ Sample Success Response (200 OK)</b></summary>
 
-Sample Response (200 OK):
-
+```json
 {
   "message": "Customer successfully updated",
   "customer": {
@@ -134,12 +171,13 @@ Sample Response (200 OK):
     "createdDate": "2026-10-07T21:19:37.083"
   }
 }
+```
+</details>
 
+<details>
+<summary><b>▶ Sample Error Response (400 Bad Request)</b></summary>
 
-Error Responses:
-
-400 Bad Request (Not Found):
-
+```json
 {
   "response": {
     "error": "BAD_REQUEST",
@@ -148,10 +186,13 @@ Error Responses:
     "datetime": "2026-10-07T21:05:44.987654"
   }
 }
+```
+</details>
 
+<details>
+<summary><b>▶ Sample Error Response (409 Conflict)</b></summary>
 
-409 Conflict:
-
+```json
 {
   "response": {
     "error": "CONFLICT",
@@ -160,15 +201,33 @@ Error Responses:
     "datetime": "2026-10-07T21:10:11.654321"
   }
 }
+```
+</details>
 
+---
 
-# Configuration
+## ⚙️ Configuration & Setup
 
-Ensure your application.properties (or application.yml) file specifies the correct dialect for SQL Server integration:
+> [!IMPORTANT]
+> **MSSQL Dialect Setup**: To prevent query syntax errors (`Incorrect syntax near 'limit'`), explicitly configure the SQL Server dialect in your application properties.
 
-spring.datasource.url=jdbc:sqlserver://<HOST>:<PORT>;databaseName=<DB_NAME>
-spring.datasource.username=<USERNAME>
-spring.datasource.password=<PASSWORD>
+Configure your `src/main/resources/application.properties`:
 
-# Hibernate Dialect Configuration for MSSQL
+```properties
+# DataSource Configuration
+spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=video_rental_db;encrypt=true;trustServerCertificate=true
+spring.datasource.username=sa
+spring.datasource.password=YourStrongPassword123
+
+# JPA & Hibernate Dialect
 spring.jpa.database-platform=org.hibernate.dialect.SQLServerDialect
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+
+# Disable Spring Boot 3 RFC 7807 problem details to use custom exception handler format
+spring.mvc.problemdetails.enabled=false
+```
+
+---
+
+*Maintained for Video Rental System API Services.*
